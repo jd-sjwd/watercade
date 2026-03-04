@@ -16,15 +16,11 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-const FONT = "'Press Start 2P', 'Courier New', monospace";
-const GAME_ID = 'water-blaster';
-
 let player, cursors, playerBullets, enemyBullets, enemies, powerUpGroup;
 let score = 0, lives = 3, wave = 1;
 let scoreText, livesText, waveText, powerUpIndicator;
 let gameOver = false, gameStarted = false;
-let startGroup;
-let lbGroup = null;
+let startGroup, gameOverGroup;
 let lastFire = 0, fireRate = 350;
 let spreadShot = false, rapidFire = false, shieldActive = false;
 let spreadTimer = 0, rapidTimer = 0;
@@ -64,209 +60,6 @@ const EDU_FACTS = {
     ]
 };
 
-// --- Audio (Web Audio API) ---
-let audioCtx = null;
-function initAudio() {
-    if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-function sfxShoot() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(880, t);
-    osc.frequency.exponentialRampToValueAtTime(440, t + 0.08);
-    g.gain.setValueAtTime(0.06, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    osc.start(t); osc.stop(t + 0.09);
-}
-function sfxExplode() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.18, audioCtx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-    const n = audioCtx.createBufferSource(); n.buffer = buf;
-    const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 800;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtValue(0.001, t + 0.18);
-    n.connect(f); f.connect(g); g.connect(audioCtx.destination);
-    n.start(t); n.stop(t + 0.18);
-}
-function sfxBossExplode() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    [220, 180, 140, 110, 80].forEach((f, i) => {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f, t + i * 0.12);
-        g.gain.setValueAtTime(0.12, t + i * 0.12);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.20);
-        o.start(t + i * 0.12); o.stop(t + i * 0.12 + 0.20);
-    });
-}
-function sfxHit() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(300, t);
-    osc.frequency.exponentialRampToValueAtTime(80, t + 0.22);
-    g.gain.setValueAtTime(0.14, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-    osc.start(t); osc.stop(t + 0.22);
-}
-function sfxPowerUp() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    [523, 659, 784, 1047].forEach((f, i) => {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f, t + i * 0.07);
-        g.gain.setValueAtTime(0.10, t + i * 0.07);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.15);
-        o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.15);
-    });
-}
-function sfxWaveClear() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    [523, 659, 784, 1047, 784, 1047].forEach((f, i) => {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f, t + i * 0.10);
-        g.gain.setValueAtTime(0.10, t + i * 0.10);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.10 + 0.18);
-        o.start(t + i * 0.10); o.stop(t + i * 0.10 + 0.18);
-    });
-}
-function sfxGameOver() {
-    if (!audioCtx) return;
-    const t = audioCtx.currentTime;
-    [440, 370, 330, 277, 220].forEach((f, i) => {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f, t + i * 0.13);
-        g.gain.setValueAtTime(0.10, t + i * 0.13);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.13 + 0.20);
-        o.start(t + i * 0.13); o.stop(t + i * 0.13 + 0.20);
-    });
-}
-
-// --- Leaderboard ---
-function lbKey() { return 'sjwd_' + GAME_ID + '_' + new Date().toISOString().slice(0, 10); }
-function getLB() { try { return JSON.parse(localStorage.getItem(lbKey()) || '[]'); } catch(e) { return []; } }
-function saveLB(e) { localStorage.setItem(lbKey(), JSON.stringify(e)); }
-function isTopScore(s) { const lb = getLB(); return s > 0 && (lb.length < 5 || s > lb[lb.length - 1].score); }
-function addLBEntry(name, s) {
-    const lb = getLB(), ts = Date.now();
-    lb.push({ name: name.slice(0, 12).toUpperCase(), score: s, ts });
-    lb.sort((a, b) => b.score - a.score || a.ts - b.ts);
-    const top5 = lb.slice(0, 5);
-    saveLB(top5);
-    return { entries: top5, rank: top5.findIndex(e => e.ts === ts) };
-}
-function showNameEntry(playerScore, onSubmit) {
-    const ol = document.createElement('div');
-    ol.id = 'sjwd-name-overlay';
-    Object.assign(ol.style, {
-        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-        background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-        fontFamily: FONT, color: '#fff'
-    });
-    ol.innerHTML = `
-        <div style="font-size:13px;color:#ff4444;margin-bottom:18px;text-shadow:0 0 10px #ff0000">NEW HIGH SCORE!</div>
-        <div style="font-size:10px;color:#ffff00;margin-bottom:6px">SCORE: ${playerScore}</div>
-        <div style="font-size:9px;color:#aaa;margin-bottom:14px">Enter your name:</div>
-        <input id="sjwd-name-input" maxlength="12" autocomplete="off"
-            style="font-family:${FONT};font-size:14px;background:#0d1b2a;color:#00bfff;
-                   border:2px solid #00bfff;border-radius:4px;padding:8px 14px;
-                   text-align:center;width:200px;outline:none;text-transform:uppercase;margin-bottom:18px">
-        <button id="sjwd-name-submit"
-            style="font-family:${FONT};font-size:10px;background:#4a5568;color:#00bfff;
-                   border:2px solid #00bfff;border-radius:4px;padding:8px 20px;cursor:pointer">SUBMIT</button>`;
-    document.body.appendChild(ol);
-    const inp = document.getElementById('sjwd-name-input');
-    const btn = document.getElementById('sjwd-name-submit');
-    inp.focus();
-    inp.addEventListener('input', () => { inp.value = inp.value.toUpperCase(); });
-    const submit = () => {
-        const name = inp.value.trim() || 'AAA';
-        document.body.removeChild(ol);
-        onSubmit(name);
-    };
-    btn.addEventListener('click', submit);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-}
-function showGameOverScreen(scene, subtitleLines) {
-    if (lbGroup) { lbGroup.destroy(true); lbGroup = null; }
-    lbGroup = scene.add.group();
-    const CW = 480, CH = 640;
-    lbGroup.add(scene.add.rectangle(CW/2, CH/2, CW, CH, 0x000000, 0.88).setDepth(50));
-    lbGroup.add(scene.add.text(CW/2, 82, 'GAME OVER', {
-        fontFamily: FONT, fontSize: '26px', fill: '#ff4444',
-        shadow: { blur: 10, color: '#ff0000', fill: true }
-    }).setOrigin(0.5).setDepth(51));
-    let ty = 130;
-    subtitleLines.forEach(line => {
-        lbGroup.add(scene.add.text(CW/2, ty, line, {
-            fontFamily: FONT, fontSize: '11px', fill: '#ffff00'
-        }).setOrigin(0.5).setDepth(51));
-        ty += 26;
-    });
-    const lbY = ty + 12;
-    lbGroup.add(scene.add.rectangle(CW/2, lbY, 380, 2, 0x2a4a6a).setDepth(51));
-    lbGroup.add(scene.add.text(CW/2, lbY + 14, "TODAY'S TOP 5", {
-        fontFamily: FONT, fontSize: '9px', fill: '#00bfff'
-    }).setOrigin(0.5).setDepth(51));
-    const entries = scene._lbEntries || [];
-    const myRank = scene._lbRank !== undefined ? scene._lbRank : -1;
-    const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#aaaaaa', '#888888'];
-    entries.forEach((e, i) => {
-        const ry = lbY + 44 + i * 30;
-        const isMe = i === myRank;
-        const col = isMe ? '#ffffff' : (rankColors[i] || '#888');
-        if (isMe) lbGroup.add(scene.add.rectangle(CW/2, ry + 2, 360, 22, 0x1a3a5c).setDepth(51));
-        lbGroup.add(scene.add.text(100, ry, '#' + (i+1), { fontFamily: FONT, fontSize: '9px', fill: rankColors[i] || '#888' }).setOrigin(0.5).setDepth(51));
-        lbGroup.add(scene.add.text(210, ry, e.name || '---', { fontFamily: FONT, fontSize: '9px', fill: col }).setOrigin(0.5).setDepth(51));
-        lbGroup.add(scene.add.text(370, ry, String(e.score), { fontFamily: FONT, fontSize: '9px', fill: col }).setOrigin(0.5).setDepth(51));
-    });
-    if (!entries.length) {
-        lbGroup.add(scene.add.text(CW/2, lbY + 60, 'No scores today yet', {
-            fontFamily: FONT, fontSize: '8px', fill: '#4a5568'
-        }).setOrigin(0.5).setDepth(51));
-    }
-    const btnY = lbY + 44 + 5 * 30 + 22;
-    const rBg = scene.add.rectangle(148, btnY, 196, 42, 0x4a5568).setStrokeStyle(2, 0x00bfff).setDepth(51).setInteractive({ useHandCursor: true });
-    lbGroup.add(rBg);
-    const rTxt = scene.add.text(148, btnY, 'PLAY AGAIN', { fontFamily: FONT, fontSize: '10px', fill: '#00bfff' }).setOrigin(0.5).setDepth(52);
-    lbGroup.add(rTxt);
-    rBg.on('pointerover', () => { rBg.setFillStyle(0x718096); rTxt.setFill('#ffffff'); });
-    rBg.on('pointerout',  () => { rBg.setFillStyle(0x4a5568); rTxt.setFill('#00bfff'); });
-    rBg.on('pointerdown', () => restartPlay(scene));
-    const hBg = scene.add.rectangle(332, btnY, 196, 42, 0x4a5568).setStrokeStyle(2, 0x4a90d9).setDepth(51).setInteractive({ useHandCursor: true });
-    lbGroup.add(hBg);
-    const hTxt = scene.add.text(332, btnY, 'ARCADE HUB', { fontFamily: FONT, fontSize: '10px', fill: '#4a90d9' }).setOrigin(0.5).setDepth(52);
-    lbGroup.add(hTxt);
-    hBg.on('pointerover', () => { hBg.setFillStyle(0x718096); hTxt.setFill('#ffffff'); });
-    hBg.on('pointerout',  () => { hBg.setFillStyle(0x4a5568); hTxt.setFill('#4a90d9'); });
-    hBg.on('pointerdown', () => { window.location.href = '../'; });
-}
-
 function preload() {}
 
 function create() {
@@ -285,23 +78,24 @@ function create() {
 
     // HUD
     scoreText = scene.add.text(16, 16, 'SCORE: 0', {
-        fontFamily: FONT, fontSize: '11px', fill: '#00bfff'
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '11px', fill: '#00bfff'
     }).setDepth(10).setVisible(false);
     waveText = scene.add.text(240, 16, 'WAVE 1', {
-        fontFamily: FONT, fontSize: '11px', fill: '#ffff00'
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '11px', fill: '#ffff00'
     }).setOrigin(0.5, 0).setDepth(10).setVisible(false);
     livesText = scene.add.text(464, 16, '', {
-        fontFamily: FONT, fontSize: '11px', fill: '#ff6b6b'
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '11px', fill: '#ff6b6b'
     }).setOrigin(1, 0).setDepth(10).setVisible(false);
     powerUpIndicator = scene.add.text(16, 36, '', {
-        fontFamily: FONT, fontSize: '8px', fill: '#00ffff'
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '8px', fill: '#00ffff'
     }).setDepth(10).setVisible(false);
 
-    // Educational info bar
+    // Educational info bar at bottom of game area
     eduBg = scene.add.rectangle(240, 618, 470, 36, 0x0a1628, 0.9)
         .setStrokeStyle(1, 0x2a4a6a).setDepth(8).setAlpha(0);
     eduText = scene.add.text(240, 618, '', {
-        fontFamily: FONT, fontSize: '6px', fill: '#88ccff', align: 'center',
+        fontFamily: "'Press Start 2P', 'Courier New', monospace",
+        fontSize: '6px', fill: '#88ccff', align: 'center',
         wordWrap: { width: 450 }, lineSpacing: 4
     }).setOrigin(0.5).setDepth(9).setAlpha(0);
 
@@ -317,7 +111,7 @@ function create() {
         fire: Phaser.Input.Keyboard.KeyCodes.SPACE
     });
 
-    scene.input.on('pointerdown', () => initAudio());
+    // Mobile controls
     setupMobile(scene);
 
     buildStartScreen(scene);
@@ -340,13 +134,14 @@ function update(time, delta) {
     if ((cursors.up.isDown || scene.wasd.fire.isDown || scene.mobileFire) && time > lastFire + (rapidFire ? fireRate / 2 : fireRate)) {
         lastFire = time;
         fireBullet(scene);
-        sfxShoot();
     }
 
+    // Shield follow
     if (shieldSprite && shieldActive) {
         shieldSprite.setPosition(player.x, player.y);
     }
 
+    // Power-up timers
     if (spreadShot) {
         spreadTimer -= delta;
         if (spreadTimer <= 0) { spreadShot = false; updatePowerUpText(); }
@@ -356,6 +151,7 @@ function update(time, delta) {
         if (rapidTimer <= 0) { rapidFire = false; updatePowerUpText(); }
     }
 
+    // Enemy movement
     if (!bossActive) {
         moveEnemies(delta);
         enemyShootTimer += delta;
@@ -372,11 +168,11 @@ function update(time, delta) {
         }
     }
 
+    // Check wave clear
     if (enemies.countActive() === 0 && (!bossActive || (boss && !boss.active))) {
         if (!waveCleared) {
             waveCleared = true;
             waveDelay = time + 1500;
-            sfxWaveClear();
             showFloating(scene, 240, 300, 'WAVE CLEARED!', '#00ff7f');
         }
     }
@@ -391,6 +187,7 @@ function update(time, delta) {
         }
     }
 
+    // Edu text fade timer
     if (eduTimer > 0) {
         eduTimer -= delta;
         if (eduTimer <= 0 && eduText) {
@@ -398,10 +195,15 @@ function update(time, delta) {
         }
     }
 
-    playerBullets.getChildren().forEach(b => { if (b.y < -10) b.destroy(); });
-    enemyBullets.getChildren().forEach(b => { if (b.y > 660) b.destroy(); });
-    powerUpGroup.getChildren().forEach(p => { if (p.y > 660) p.destroy(); });
+    // Cleanup offscreen — use spread to snapshot the array before iterating,
+    // because destroy() splices the element out of the group's internal array
+    // mid-forEach, causing every other off-screen object to be skipped and
+    // left alive in the physics world (accumulating ghost bodies → freeze).
+    [...playerBullets.getChildren()].forEach(b => { if (b.y < -10) b.destroy(); });
+    [...enemyBullets.getChildren()].forEach(b => { if (b.y > 660) b.destroy(); });
+    [...powerUpGroup.getChildren()].forEach(p => { if (p.y > 660) p.destroy(); });
 
+    // Check enemies reaching bottom
     enemies.getChildren().forEach(e => {
         if (e.y > 560) { endGame(scene); }
     });
@@ -501,6 +303,9 @@ function bossShoot(scene) {
 }
 
 function bulletHitEnemy(bullet, enemy) {
+    // Guard: Phaser can queue multiple callbacks for the same pair in one
+    // physics step before any destroy() is processed — skip stale calls.
+    if (!bullet.active || !enemy.active) return;
     const scene = bullet.scene;
     bullet.destroy();
     if (enemy.getData('type') === 'boss') {
@@ -509,7 +314,6 @@ function bulletHitEnemy(bullet, enemy) {
         enemy.setTint(0xff0000);
         scene.time.delayedCall(100, () => { if (enemy.active) enemy.clearTint(); });
         if (hp <= 0) {
-            sfxBossExplode();
             explosionEffect(scene, enemy.x, enemy.y, 12);
             score += enemy.getData('points');
             scoreText.setText('SCORE: ' + score);
@@ -521,15 +325,17 @@ function bulletHitEnemy(bullet, enemy) {
         }
         return;
     }
-    sfxExplode();
     explosionEffect(scene, enemy.x, enemy.y, 6);
     const enemyType = enemy.getData('type');
     score += enemy.getData('points');
     scoreText.setText('SCORE: ' + score);
 
+    // Show educational fact (not every kill - ~30% chance, or always on first kill of a wave)
     if (Phaser.Math.Between(0, 100) < 30) {
         showEduFact(scene, enemyType);
     }
+
+    // Power-up drop chance
     if (Phaser.Math.Between(0, 100) < 12) {
         dropPowerUp(scene, enemy.x, enemy.y);
     }
@@ -537,6 +343,7 @@ function bulletHitEnemy(bullet, enemy) {
 }
 
 function enemyHitPlayer(plyr, bullet) {
+    if (!plyr.active || !bullet.active) return;
     const scene = bullet.scene;
     bullet.destroy();
     if (shieldActive) {
@@ -546,7 +353,6 @@ function enemyHitPlayer(plyr, bullet) {
         updatePowerUpText();
         return;
     }
-    sfxHit();
     redFlash(scene);
     lives--;
     updateLives();
@@ -564,9 +370,9 @@ function dropPowerUp(scene, x, y) {
 }
 
 function collectPowerUp(plyr, pu) {
+    if (!plyr.active || !pu.active) return;
     const scene = pu.scene;
     const type = pu.getData('type');
-    sfxPowerUp();
     if (type === 0) {
         spreadShot = true; spreadTimer = 10000;
         showFloating(scene, pu.x, pu.y, 'SPREAD!', '#00ffff');
@@ -624,7 +430,7 @@ function showEduFact(scene, type) {
 
 function showFloating(scene, x, y, msg, color) {
     const txt = scene.add.text(x, y, msg, {
-        fontFamily: FONT, fontSize: '14px', fill: color
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '14px', fill: color
     }).setOrigin(0.5).setDepth(20);
     scene.tweens.add({ targets: txt, y: y - 50, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
@@ -644,20 +450,9 @@ function endGame(scene) {
     powerUpGroup.clear(true, true);
     if (shieldSprite) { shieldSprite.destroy(); shieldSprite = null; }
     if (eduText) { eduText.setAlpha(0); eduBg.setAlpha(0); }
-    sfxGameOver();
-    const subtitleLines = ['SCORE: ' + score, 'WAVE: ' + wave];
-    if (isTopScore(score)) {
-        showNameEntry(score, (name) => {
-            const result = addLBEntry(name, score);
-            scene._lbEntries = result.entries;
-            scene._lbRank = result.rank;
-            showGameOverScreen(scene, subtitleLines);
-        });
-    } else {
-        scene._lbEntries = getLB();
-        scene._lbRank = -1;
-        showGameOverScreen(scene, subtitleLines);
-    }
+    gameOverGroup.getChildren().forEach(c => c.setVisible(true));
+    const fs = gameOverGroup.getChildren().find(c => c.getData && c.getData('id') === 'finalScore');
+    if (fs) fs.setText('SCORE: ' + score + '\nWAVE: ' + wave);
 }
 
 function setupMobile(scene) {
@@ -668,15 +463,15 @@ function setupMobile(scene) {
     const btnR = document.getElementById('btn-right');
     const btnF = document.getElementById('btn-fire');
     if (btnL) {
-        btnL.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); scene.mobileLeft = true; });
+        btnL.addEventListener('touchstart', (e) => { e.preventDefault(); scene.mobileLeft = true; });
         btnL.addEventListener('touchend', () => { scene.mobileLeft = false; });
     }
     if (btnR) {
-        btnR.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); scene.mobileRight = true; });
+        btnR.addEventListener('touchstart', (e) => { e.preventDefault(); scene.mobileRight = true; });
         btnR.addEventListener('touchend', () => { scene.mobileRight = false; });
     }
     if (btnF) {
-        btnF.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); scene.mobileFire = true; });
+        btnF.addEventListener('touchstart', (e) => { e.preventDefault(); scene.mobileFire = true; });
         btnF.addEventListener('touchend', () => { scene.mobileFire = false; });
     }
 }
@@ -685,6 +480,7 @@ function setupMobile(scene) {
 function createTextures(scene) {
     let g;
 
+    // Player cannon
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x2196f3);
     g.fillRect(16, 20, 16, 20);
@@ -697,6 +493,7 @@ function createTextures(scene) {
     g.generateTexture('cannon', 48, 44);
     g.destroy();
 
+    // Player bullet
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x00bfff);
     g.fillRoundedRect(1, 0, 6, 14, 3);
@@ -705,6 +502,7 @@ function createTextures(scene) {
     g.generateTexture('bullet', 8, 14);
     g.destroy();
 
+    // Enemy bullet
     g = scene.make.graphics({ add: false });
     g.fillStyle(0xff4444);
     g.fillCircle(4, 5, 4);
@@ -712,6 +510,7 @@ function createTextures(scene) {
     g.generateTexture('ebullet', 8, 10);
     g.destroy();
 
+    // Lead enemy
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x708090);
     g.fillCircle(14, 14, 12);
@@ -723,6 +522,7 @@ function createTextures(scene) {
     g.generateTexture('lead', 28, 28);
     g.destroy();
 
+    // Bacteria enemy
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x32cd32);
     g.fillCircle(14, 14, 11);
@@ -734,6 +534,7 @@ function createTextures(scene) {
     g.generateTexture('bacteria', 28, 28);
     g.destroy();
 
+    // Chlorine enemy
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x9acd32);
     g.fillCircle(14, 14, 11);
@@ -744,6 +545,7 @@ function createTextures(scene) {
     g.generateTexture('chlorine', 28, 28);
     g.destroy();
 
+    // Rust enemy
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x8b4513);
     g.fillCircle(14, 14, 11);
@@ -754,6 +556,7 @@ function createTextures(scene) {
     g.generateTexture('rust_e', 28, 28);
     g.destroy();
 
+    // Boss
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x800080);
     g.fillRoundedRect(4, 4, 64, 48, 8);
@@ -770,6 +573,7 @@ function createTextures(scene) {
     g.generateTexture('boss', 72, 56);
     g.destroy();
 
+    // Power-ups
     g = scene.make.graphics({ add: false });
     g.fillStyle(0x00ffff);
     g.fillTriangle(12, 0, 0, 12, 12, 24);
@@ -799,17 +603,18 @@ function buildStartScreen(scene) {
     const bg = scene.add.rectangle(240, 320, 480, 640, 0x000000, 0.88).setDepth(50);
     startGroup.add(bg);
 
+    // SJWD Logo
     const logoBox = scene.add.rectangle(240, 110, 140, 90, 0x000000).setStrokeStyle(3, 0xffffff).setDepth(51);
     startGroup.add(logoBox);
     startGroup.add(scene.add.rectangle(240, 85, 120, 16, 0xffffff).setDepth(51));
     startGroup.add(scene.add.text(240, 108, 'SJWD', { fontFamily: 'Arial', fontSize: '24px', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(51));
     startGroup.add(scene.add.text(240, 138, 'WATER DISTRICT', { fontFamily: 'Arial', fontSize: '8px', fill: '#000', backgroundColor: '#fff', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(51));
 
-    startGroup.add(scene.add.text(240, 200, 'WATER BLASTER', { fontFamily: FONT, fontSize: '20px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51));
-    startGroup.add(scene.add.text(240, 228, 'Purify the Supply!', { fontFamily: FONT, fontSize: '10px', fill: '#ffffff' }).setOrigin(0.5).setDepth(51));
+    startGroup.add(scene.add.text(240, 200, 'WATER BLASTER', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '20px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51));
+    startGroup.add(scene.add.text(240, 228, 'Purify the Supply!', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '10px', fill: '#ffffff' }).setOrigin(0.5).setDepth(51));
 
     startGroup.add(scene.add.text(240, 280, 'Shoot down contaminants\nbefore they reach\nthe water supply!\n\nCollect power-ups!', {
-        fontFamily: FONT, fontSize: '9px', fill: '#aaa', align: 'center', lineSpacing: 6
+        fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '9px', fill: '#aaa', align: 'center', lineSpacing: 6
     }).setOrigin(0.5).setDepth(51));
 
     const legend = [
@@ -819,14 +624,14 @@ function buildStartScreen(scene) {
     legend.forEach((it, i) => {
         const lx = 80 + i * 100;
         startGroup.add(scene.add.circle(lx, 360, 6, Phaser.Display.Color.HexStringToColor(it.c).color).setDepth(51));
-        startGroup.add(scene.add.text(lx, 374, it.n, { fontFamily: FONT, fontSize: '6px', fill: it.c }).setOrigin(0.5, 0).setDepth(51));
+        startGroup.add(scene.add.text(lx, 374, it.n, { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '6px', fill: it.c }).setOrigin(0.5, 0).setDepth(51));
     });
 
-    startGroup.add(scene.add.text(240, 410, 'Arrows/WASD + Space', { fontFamily: FONT, fontSize: '9px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51));
+    startGroup.add(scene.add.text(240, 410, 'Arrows/WASD + Space', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '9px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51));
 
     const btnBg = scene.add.rectangle(240, 480, 220, 50, 0x4a5568).setStrokeStyle(3, 0x00bfff).setDepth(51).setInteractive({ useHandCursor: true });
     startGroup.add(btnBg);
-    const btnTxt = scene.add.text(240, 480, 'START BLASTING', { fontFamily: FONT, fontSize: '12px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51);
+    const btnTxt = scene.add.text(240, 480, 'START BLASTING', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '12px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51);
     startGroup.add(btnTxt);
 
     btnBg.on('pointerover', () => { btnBg.setFillStyle(0x718096); btnTxt.setFill('#fff'); });
@@ -836,13 +641,25 @@ function buildStartScreen(scene) {
 }
 
 function buildGameOverScreen(scene) {
-    // Game over UI is dynamically built by showGameOverScreen()
+    gameOverGroup = scene.add.group();
+    const bg = scene.add.rectangle(240, 320, 480, 640, 0x000000, 0.88).setDepth(50).setVisible(false);
+    gameOverGroup.add(bg);
+    gameOverGroup.add(scene.add.text(240, 200, 'GAME OVER', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '28px', fill: '#ff0000' }).setOrigin(0.5).setDepth(51).setVisible(false));
+    const fs = scene.add.text(240, 280, '', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '14px', fill: '#ffff00', align: 'center', lineSpacing: 8 }).setOrigin(0.5).setDepth(51).setVisible(false);
+    fs.setData('id', 'finalScore');
+    gameOverGroup.add(fs);
+
+    const rBg = scene.add.rectangle(240, 380, 200, 50, 0x4a5568).setStrokeStyle(3, 0x00bfff).setDepth(51).setInteractive({ useHandCursor: true }).setVisible(false);
+    gameOverGroup.add(rBg);
+    const rTxt = scene.add.text(240, 380, 'PLAY AGAIN', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '12px', fill: '#00bfff' }).setOrigin(0.5).setDepth(51).setVisible(false);
+    gameOverGroup.add(rTxt);
+    rBg.on('pointerover', () => { rBg.setFillStyle(0x718096); rTxt.setFill('#fff'); });
+    rBg.on('pointerout', () => { rBg.setFillStyle(0x4a5568); rTxt.setFill('#00bfff'); });
+    rBg.on('pointerdown', () => restartPlay(scene));
     scene.input.keyboard.on('keydown-ENTER', () => { if (gameOver) restartPlay(scene); });
-    scene.input.keyboard.on('keydown-SPACE', () => { if (gameOver) restartPlay(scene); });
 }
 
 function startPlay(scene) {
-    initAudio();
     gameStarted = true;
     startGroup.getChildren().forEach(c => c.setVisible(false));
     player.setVisible(true);
@@ -854,7 +671,6 @@ function startPlay(scene) {
 }
 
 function restartPlay(scene) {
-    if (lbGroup) { lbGroup.destroy(true); lbGroup = null; }
     score = 0; lives = 3; wave = 1;
     gameOver = false; bossActive = false; boss = null;
     spreadShot = false; rapidFire = false; shieldActive = false;
@@ -870,6 +686,7 @@ function restartPlay(scene) {
     enemyBullets.clear(true, true);
     powerUpGroup.clear(true, true);
 
+    gameOverGroup.getChildren().forEach(c => c.setVisible(false));
     player.setVisible(true);
     player.setPosition(240, 575);
 
