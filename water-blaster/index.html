@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Water Blaster - SJWD Water District</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #0d1b2a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            overflow: hidden;
+        }
+        #game-container { position: relative; }
+        #game-container canvas {
+            border: 4px solid #4a5568;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3), 0 0 40px rgba(0, 188, 212, 0.1);
+        }
+        #mobile-controls {
+            display: none;
+            gap: 8px;
+            justify-content: center;
+            padding: 10px;
+            width: 100%;
+            max-width: 480px;
+        }
+        .ctrl-btn {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 11px;
+            padding: 14px 10px;
+            border: 2px solid #4a90d9;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #1a3a5c, #0d1b2a);
+            color: #7fdbff;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            flex: 1;
+            text-align: center;
+        }
+        .ctrl-btn:active {
+            background: linear-gradient(180deg, #2a5a8c, #1a3a5c);
+            border-color: #7fdbff;
+        }
+        .ctrl-btn.fire-btn {
+            background: linear-gradient(180deg, #5c1a1a, #2a0d0d);
+            border-color: #d94a4a;
+            color: #ff7f7f;
+        }
+        .ctrl-btn.fire-btn:active {
+            background: linear-gradient(180deg, #8c2a2a, #5c1a1a);
+            border-color: #ff7f7f;
+        }
+        .footer {
+            color: #4a5568;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 8px;
+            text-align: center;
+            margin-top: 12px;
+            line-height: 1.8;
+        }
+        @media (max-width: 520px), (pointer: coarse) {
+            #mobile-controls { display: flex; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="mobile-controls">
+        <button class="ctrl-btn" id="btn-left">LEFT</button>
+        <button class="ctrl-btn fire-btn" id="btn-fire">FIRE</button>
+        <button class="ctrl-btn" id="btn-right">RIGHT</button>
+    </div>
+    <div class="footer">
+        Author: Jeff Diaz<br>
+        &copy; 2026 SJWD Water District
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
