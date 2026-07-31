@@ -66,6 +66,21 @@
             color: #4a90d9;
             margin-bottom: 40px;
         }
+        .mobile-banner {
+            display: inline-block;
+            margin: -20px 20px 32px;
+            padding: 14px 22px;
+            border: 2px solid #2a4a6a;
+            border-radius: 10px;
+            background: rgba(0,191,255,0.06);
+            color: #4a90d9;
+            font-size: 9px;
+            line-height: 1.9;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .mobile-banner:hover { border-color: #00bfff; color: #00bfff; }
+        .mobile-banner strong { color: #00bfff; }
         .games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -74,6 +89,24 @@
             width: 100%;
             padding: 0 20px;
         }
+        .game-slot {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .game-slot .game-card { flex: 1; }
+        .mobile-link {
+            text-align: center;
+            font-size: 8px;
+            color: #4a5568;
+            text-decoration: none;
+            padding: 10px 8px;
+            border: 1px solid #223a52;
+            border-radius: 8px;
+            line-height: 1.8;
+            transition: all 0.2s;
+        }
+        .mobile-link:hover { color: #00bfff; border-color: #2a4a6a; }
         .game-card {
             background: linear-gradient(145deg, #1a2a3a, #0d1b2a);
             border: 3px solid #2a4a6a;
@@ -161,40 +194,56 @@
         <p class="subtitle">Choose Your Game</p>
     </div>
 
+    <a href="mobile/" class="mobile-banner">
+        📱 On a phone or tablet?<br><strong>Play the Mobile Arcade &rarr;</strong>
+    </a>
+
     <div class="games-grid">
-      
-        <a href="pipe-fitter/" class="game-card">
-            <span class="game-icon">🔧</span>
-            <h2>PIPE FITTER</h2>
-            <div class="genre">Puzzle Game</div>
-            <p>Fit pipe segments together to build complete pipelines! Clear rows to flush water through.</p>
-            <span class="play-btn">PLAY</span>
-        </a>
 
-        <a href="aqua-match/" class="game-card">
-            <span class="game-icon">🧪</span>
-            <h2>AQUA MATCH</h2>
-            <div class="genre">Matching Puzzle</div>
-            <p>Drop treatment capsules to match and neutralize bacteria, algae, and sediment contaminants!</p>
-            <span class="play-btn">PLAY</span>
-        </a>
+        <div class="game-slot">
+            <a href="pipe-fitter/" class="game-card">
+                <span class="game-icon">🔧</span>
+                <h2>PIPE FITTER</h2>
+                <div class="genre">Puzzle Game</div>
+                <p>Fit pipe segments together to build complete pipelines! Clear rows to flush water through.</p>
+                <span class="play-btn">PLAY</span>
+            </a>
+            <a href="pipe-fitter/mobile/" class="mobile-link">📱 MOBILE VERSION</a>
+        </div>
 
-          <a href="drop-catcher/" class="game-card">
-            <span class="game-icon">🪣</span>
-            <h2>DROP CATCHER</h2>
-            <div class="genre">Catch Game</div>
-            <p>Catch falling water drops with your bucket! Avoid contaminants and grab power-ups.</p>
-            <span class="play-btn">PLAY</span>
-        </a>
+        <div class="game-slot">
+            <a href="aqua-match/" class="game-card">
+                <span class="game-icon">🧪</span>
+                <h2>AQUA MATCH</h2>
+                <div class="genre">Matching Puzzle</div>
+                <p>Drop treatment capsules to match and neutralize bacteria, algae, and sediment contaminants!</p>
+                <span class="play-btn">PLAY</span>
+            </a>
+            <a href="aqua-match/mobile/" class="mobile-link">📱 MOBILE VERSION</a>
+        </div>
 
-        <a href="water-blaster/" class="game-card">
-            <span class="game-icon">🔫</span>
-            <h2>WATER BLASTER</h2>
-            <div class="genre">Space Shooter</div>
-            <p>Blast contaminants out of the water supply! Face waves of enemies and boss battles.</p>
-            <span class="play-btn">PLAY</span>
-        </a>   
-    
+        <div class="game-slot">
+            <a href="drop-catcher/" class="game-card">
+                <span class="game-icon">🪣</span>
+                <h2>DROP CATCHER</h2>
+                <div class="genre">Catch Game</div>
+                <p>Catch falling water drops with your bucket! Avoid contaminants and grab power-ups.</p>
+                <span class="play-btn">PLAY</span>
+            </a>
+            <a href="drop-catcher/mobile/" class="mobile-link">📱 MOBILE VERSION</a>
+        </div>
+
+        <div class="game-slot">
+            <a href="water-blaster/" class="game-card">
+                <span class="game-icon">🔫</span>
+                <h2>WATER BLASTER</h2>
+                <div class="genre">Space Shooter</div>
+                <p>Blast contaminants out of the water supply! Face waves of enemies and boss battles.</p>
+                <span class="play-btn">PLAY</span>
+            </a>
+            <a href="water-blaster/mobile/" class="mobile-link">📱 MOBILE VERSION</a>
+        </div>
+
     </div>
 
     <div class="footer">

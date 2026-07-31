@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d1b2a">
+    <title>SJWD Water Arcade - Mobile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0d1b2a;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding:
+                calc(env(safe-area-inset-top, 0px) + 22px)
+                calc(env(safe-area-inset-right, 0px) + 16px)
+                calc(env(safe-area-inset-bottom, 0px) + 22px)
+                calc(env(safe-area-inset-left, 0px) + 16px);
+            overscroll-behavior-y: none;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header { text-align: center; margin-bottom: 26px; }
+
+        .sjwd-logo {
+            display: inline-block;
+            width: 132px;
+            height: 84px;
+            background: #000;
+            border: 3px solid #fff;
+            padding: 5px;
+            margin-bottom: 16px;
+            box-shadow: 0 0 16px rgba(255,255,255,0.25);
+        }
+        .sjwd-logo .wave {
+            height: 16px;
+            background: #fff;
+            border-radius: 0 0 50% 50% / 0 0 100% 100%;
+        }
+        .sjwd-logo .text-main {
+            font-size: 21px;
+            font-weight: bold;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            margin-top: 3px;
+        }
+        .sjwd-logo .text-sub {
+            font-size: 7px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            letter-spacing: 1px;
+            background: #fff;
+            color: #000;
+            padding: 2px 4px;
+            margin: 4px 3px 0;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 19px;
+            color: #00bfff;
+            text-shadow: 0 0 10px #00bfff, 2px 2px 4px #0066cc;
+            line-height: 1.5;
+        }
+        .subtitle {
+            font-size: 8px;
+            color: #4a90d9;
+            margin-top: 10px;
+            line-height: 1.8;
+        }
+
+        .games {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        /* Whole card is the tap target - comfortably over the 44px minimum. */
+        .game-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-height: 88px;
+            padding: 16px;
+            background: linear-gradient(145deg, #1a2a3a, #0d1b2a);
+            border: 2px solid #2a4a6a;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .game-card:active {
+            border-color: #00bfff;
+            background: linear-gradient(145deg, #23384d, #12273a);
+        }
+
+        .game-icon { font-size: 34px; flex: none; width: 44px; text-align: center; }
+
+        .game-text { flex: 1; min-width: 0; }
+        .game-text h2 { font-size: 13px; color: #00bfff; margin-bottom: 7px; }
+        .game-text .genre {
+            font-size: 7px;
+            color: #4a90d9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 7px;
+        }
+        .game-text p { font-size: 8px; color: #8899aa; line-height: 1.9; }
+
+        .chev { flex: none; color: #4a90d9; font-size: 16px; }
+
+        .desktop-link {
+            display: block;
+            max-width: 520px;
+            margin: 26px auto 0;
+            padding: 16px;
+            text-align: center;
+            font-size: 9px;
+            color: #4a90d9;
+            border: 2px solid #2a4a6a;
+            border-radius: 10px;
+            text-decoration: none;
+            line-height: 1.8;
+        }
+        .desktop-link:active { border-color: #4a90d9; color: #7fdbff; }
+
+        .footer {
+            text-align: center;
+            padding: 26px 12px 0;
+            font-size: 7px;
+            color: #4a5568;
+            line-height: 2.2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sjwd-logo">
+            <div class="wave"></div>
+            <div class="text-main">SJWD</div>
+            <div class="text-sub">WATER DISTRICT</div>
+        </div>
+        <h1>WATER<br>ARCADE</h1>
+        <p class="subtitle">Mobile Edition</p>
+    </div>
+
+    <div class="games">
+        <a href="../pipe-fitter/mobile/" class="game-card">
+            <span class="game-icon">🔧</span>
+            <span class="game-text">
+                <h2>PIPE FITTER</h2>
+                <div class="genre">Puzzle Game</div>
+                <p>Drag, tap to rotate, and clear rows to flush water through.</p>
+            </span>
+            <span class="chev">▶</span>
+        </a>
+
+        <a href="../aqua-match/mobile/" class="game-card">
+            <span class="game-icon">🧪</span>
+            <span class="game-text">
+                <h2>AQUA MATCH</h2>
+                <div class="genre">Matching Puzzle</div>
+                <p>Drop treatment capsules to neutralize contaminants.</p>
+            </span>
+            <span class="chev">▶</span>
+        </a>
+
+        <a href="../drop-catcher/mobile/" class="game-card">
+            <span class="game-icon">🪣</span>
+            <span class="game-text">
+                <h2>DROP CATCHER</h2>
+                <div class="genre">Catch Game</div>
+                <p>Drag your bucket to catch every drop and dodge contaminants.</p>
+            </span>
+            <span class="chev">▶</span>
+        </a>
+
+        <a href="../water-blaster/mobile/" class="game-card">
+            <span class="game-icon">🔫</span>
+            <span class="game-text">
+                <h2>WATER BLASTER</h2>
+                <div class="genre">Space Shooter</div>
+                <p>Drag to aim, auto-fire on. Waves of enemies and boss battles.</p>
+            </span>
+            <span class="chev">▶</span>
+        </a>
+    </div>
+
+    <a href="../" class="desktop-link">🖥️ DESKTOP ARCADE</a>
+
+    <div class="footer">
+        Author: Jeff Diaz<br>
+        &copy; 2026 SJWD Water District
+    </div>
+</body>
+</html>
