@@ -656,6 +656,15 @@ function buildGameOverScreen(scene) {
     rBg.on('pointerover', () => { rBg.setFillStyle(0x718096); rTxt.setFill('#fff'); });
     rBg.on('pointerout', () => { rBg.setFillStyle(0x4a5568); rTxt.setFill('#00bfff'); });
     rBg.on('pointerdown', () => restartPlay(scene));
+
+    const hBg = scene.add.rectangle(240, 450, 200, 44, 0x4a5568).setStrokeStyle(2, 0x4a90d9).setDepth(51).setInteractive({ useHandCursor: true }).setVisible(false);
+    gameOverGroup.add(hBg);
+    const hTxt = scene.add.text(240, 450, 'ARCADE HUB', { fontFamily: "'Press Start 2P', 'Courier New', monospace", fontSize: '10px', fill: '#4a90d9' }).setOrigin(0.5).setDepth(52).setVisible(false);
+    gameOverGroup.add(hTxt);
+    hBg.on('pointerover', () => { hBg.setFillStyle(0x718096); hTxt.setFill('#ffffff'); });
+    hBg.on('pointerout', () => { hBg.setFillStyle(0x4a5568); hTxt.setFill('#4a90d9'); });
+    hBg.on('pointerdown', () => { window.location.href = '../'; });
+
     scene.input.keyboard.on('keydown-ENTER', () => { if (gameOver) restartPlay(scene); });
 }
 
